@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
+import requests
 import os
 
 app = FastAPI()
 
-# Enable CORS (allow frontend to talk to backend)
+# CORS (frontend access)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,13 +17,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Use a LIGHTWEIGHT model (important for Render free tier)
+# Lightweight model for Render
 MODEL_NAME = "paraphrase-MiniLM-L3-v2"
-
 model = None
 db_embeddings = None
 
-# Small internal dataset (can expand later)
 documents_db = [
     "Artificial intelligence is transforming education.",
     "Machine learning improves plagiarism detection systems.",
@@ -30,7 +29,6 @@ documents_db = [
 ]
 
 
-# Lazy load model (prevents startup crash)
 def get_model():
     global model
     if model is None:
@@ -38,7 +36,6 @@ def get_model():
     return model
 
 
-# Precompute embeddings only when needed
 def get_db_embeddings():
     global db_embeddings
     if db_embeddings is None:
@@ -47,6 +44,24 @@ def get_db_embeddings():
             documents_db, convert_to_tensor=True
         )
     return db_embeddings
+
+
+# ----------------------------
+# 🌍 SIMPLE WEB CHECKING (MVP SAFE)
+# ----------------------------
+def web_search(query):
+    try:
+        url = f"https://duckduckgo.com/html/?q={query}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=5)
+
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        results = soup.find_all("a", class_="result__a")
+        return [r.get_text() for r in results[:5]]
+    except Exception:
+        return []
 
 
 class TextRequest(BaseModel):
@@ -62,49 +77,56 @@ def serve_frontend():
 def scan_text(request: TextRequest):
     text = request.text.strip()
 
-    if not text:
-        return {"error": "No text provided"}
-
     model_instance = get_model()
     db_embeds = get_db_embeddings()
 
     sentences = [s.strip() for s in text.split(".") if s.strip()]
 
     results = []
+    web_matches = []
 
     for sentence in sentences:
-        input_embedding = model_instance.encode(
-            sentence, convert_to_tensor=True
-        )
-        scores = util.cos_sim(input_embedding, db_embeds)
+        emb = model_instance.encode(sentence, convert_to_tensor=True)
+        scores = util.cos_sim(emb, db_embeds)
 
-        max_score = float(scores.max()) * 100
+        ai_score = float(scores.max()) * 100
 
-        if max_score > 75:
+        # 🌍 Web check (light)
+        web_results = web_search(sentence)
+        web_matches.extend(web_results)
+
+        # Simple keyword overlap boost
+        web_score = min(len(web_results) * 10, 40)
+
+        final_score = min(ai_score + web_score, 100)
+
+        if final_score > 75:
             status = "High similarity"
-        elif max_score > 40:
+        elif final_score > 40:
             status = "Moderate similarity"
         else:
             status = "Low similarity"
 
         results.append({
             "sentence": sentence,
-            "score": round(max_score, 2),
+            "ai_score": round(ai_score, 2),
+            "web_score": web_score,
+            "final_score": round(final_score, 2),
             "status": status
         })
 
-    overall_score = (
-        sum(r["score"] for r in results) / len(results)
+    overall = (
+        sum(r["final_score"] for r in results) / len(results)
         if results else 0
     )
 
     return {
-        "overall_similarity": round(overall_score, 2),
-        "details": results
+        "overall_similarity": round(overall, 2),
+        "details": results,
+        "web_sources": list(set(web_matches))[:8]
     }
 
 
-# Required for Render to bind correctly
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 10000))

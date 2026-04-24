@@ -1,69 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Authentiscan</title>
-  <style>
-    body { font-family: Arial; background: #f4f6fa; }
-    .container {
-      width: 80%;
-      margin: 40px auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Authentiscan</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #e2e8f0;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .header h1 {
+    font-size: 36px;
+    margin: 0;
+    color: #60a5fa;
+  }
+
+  .header p {
+    color: #94a3b8;
+  }
+
+  .card {
+    background: #111827;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+  }
+
+  textarea {
+    width: 100%;
+    height: 160px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+    padding: 12px;
+    font-size: 15px;
+    background: #0b1220;
+    color: #e2e8f0;
+    outline: none;
+  }
+
+  button {
+    margin-top: 12px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #1d4ed8;
+  }
+
+  .result-card {
+    background: #0b1220;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+    border-left: 4px solid #334155;
+  }
+
+  .high { border-left: 4px solid #ef4444; }
+  .med { border-left: 4px solid #f59e0b; }
+  .low { border-left: 4px solid #22c55e; }
+
+  .score {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-left: 6px;
+  }
+
+  .loading {
+    display: none;
+    color: #93c5fd;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 768px) {
+    .grid {
+      grid-template-columns: 1fr;
     }
-    textarea {
-      width: 100%;
-      height: 150px;
-      padding: 10px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background: #1f4b99;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .result { margin-top: 20px; }
-    .high { color: red; }
-    .medium { color: orange; }
-    .low { color: green; }
-  </style>
+  }
+</style>
 </head>
+
 <body>
 
 <div class="container">
-  <h2>Authentiscan</h2>
-  <textarea id="text" placeholder="Enter text to scan for authenticity"></textarea>
-  <br>
-  <button onclick="scan()">Scan</button>
 
-  <div class="result" id="result"></div>
+  <div class="header">
+    <h1>Authentiscan</h1>
+    <p>AI-powered plagiarism & web similarity detection system</p>
+  </div>
+
+  <div class="card">
+    <textarea id="text" placeholder="Paste your academic content here..."></textarea>
+    <button onclick="scan()">Scan Document</button>
+    <div class="loading" id="loading">Analyzing content...</div>
+  </div>
+
+  <div id="result"></div>
+
 </div>
 
 <script>
 async function scan() {
   const text = document.getElementById("text").value;
+  const loading = document.getElementById("loading");
 
-  const response = await fetch("http://127.0.0.1:8000/scan", {
+  loading.style.display = "block";
+
+  const res = await fetch("/scan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({text})
   });
 
-  const data = await response.json();
+  const data = await res.json();
 
-  let html = `<h3>Overall Similarity: ${data.overall_similarity}%</h3>`;
+  loading.style.display = "none";
+
+  let html = `
+    <div class="card">
+      <div class="score">
+        Overall Similarity: <strong>${data.overall_similarity}%</strong>
+      </div>
+    </div>
+  `;
+
+  html += `<div class="grid">`;
 
   data.details.forEach(d => {
-    let cls = d.score > 75 ? "high" : d.score > 40 ? "medium" : "low";
+    let cls = d.final_score > 75 ? "high" : d.final_score > 40 ? "med" : "low";
 
-    html += `<p class="${cls}">
-      ${d.sentence} → ${d.score}% (${d.status})
-    </p>`;
+    let label =
+      d.final_score > 75 ? "HIGH RISK" :
+      d.final_score > 40 ? "MEDIUM RISK" : "LOW RISK";
+
+    html += `
+      <div class="result-card ${cls}">
+        <p>${d.sentence}</p>
+        <p>
+          AI: ${d.ai_score}% |
+          Web: ${d.web_score}% |
+          Final: <strong>${d.final_score}%</strong>
+          <span class="tag">${label}</span>
+        </p>
+      </div>
+    `;
   });
+
+  html += `</div>`;
+
+  html += `
+    <div class="card">
+      <h3>Web Sources Detected</h3>
+      ${data.web_sources.map(w => `<p>🔗 ${w}</p>`).join("")}
+    </div>
+  `;
 
   document.getElementById("result").innerHTML = html;
 }
