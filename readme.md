@@ -1,6 +1,6 @@
 # Authentiscan 🚀
 
-**AI-Powered Plagiarism Detection for Academic & Professional Integrity**
+## AI-Powered Plagiarism Detection for Academic & Professional Integrity
 
 ---
 
