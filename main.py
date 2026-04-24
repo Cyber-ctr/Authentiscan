@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
 import os
@@ -53,8 +54,8 @@ class TextRequest(BaseModel):
 
 
 @app.get("/")
-def home():
-    return {"message": "Authentiscan API is LIVE"}
+def serve_frontend():
+    return FileResponse("index.html")
 
 
 @app.post("/scan")
