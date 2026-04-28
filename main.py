@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -71,6 +71,11 @@ class TextRequest(BaseModel):
 @app.get("/")
 def serve_frontend():
     return FileResponse("index.html")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return Response(status_code=204)
 
 
 @app.post("/scan")

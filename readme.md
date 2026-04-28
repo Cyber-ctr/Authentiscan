@@ -68,7 +68,7 @@ Authentiscan follows a simple client-server architecture:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/authentiscan.git
+git clone https://github.com/Cyber-ctr/authentiscan.git
 cd authentiscan
 ```
 
@@ -90,12 +90,6 @@ pip install -r requirements.txt
 ```bash
 uvicorn main:app --reload
 ```
-
-### 5. Open the frontend
-
-* Open `index.html` in your browser
-
----
 
 ## 🚀 Usage
 
