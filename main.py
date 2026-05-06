@@ -6,6 +6,11 @@ from sentence_transformers import SentenceTransformer, util
 import requests
 import os
 
+# Set Hugging Face token if available (optional for higher rate limits)
+# os.environ["HF_TOKEN"] = "your_huggingface_token_here"  # Uncomment and set your token
+if "HF_TOKEN" not in os.environ:
+    os.environ["HF_TOKEN"] = ""  # Suppress warning for unauthenticated requests
+
 app = FastAPI()
 
 # CORS (frontend access)
