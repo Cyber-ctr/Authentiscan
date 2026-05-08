@@ -5,134 +5,358 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Authentiscan</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-  body {
-    margin: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #e2e8f0;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #020617;
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+.hero-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(37,99,235,0.25), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(14,165,233,0.2), transparent 25%),
+    #020617;
+  z-index: -1;
+}
+
+.navbar {
+  width: 100%;
+  padding: 22px 8%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 800;
+  color: #60a5fa;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.hero {
+  padding: 60px 8% 40px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.hero-text h1 {
+  font-size: 64px;
+  line-height: 1.05;
+  margin-bottom: 20px;
+  font-weight: 800;
+}
+
+.hero-text p {
+  color: #94a3b8;
+  line-height: 1.8;
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.primary-btn,
+.secondary-btn {
+  padding: 14px 22px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: white;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+}
+
+.secondary-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+}
+
+.hero-card {
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+}
+
+.badge {
+  display: inline-block;
+  padding: 8px 14px;
+  background: rgba(37,99,235,0.15);
+  color: #93c5fd;
+  border-radius: 999px;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 180px;
+  border-radius: 16px;
+  border: 1px solid #1e293b;
+  background: #020617;
+  color: #f8fafc;
+  padding: 16px;
+  resize: vertical;
+  outline: none;
+  font-size: 15px;
+}
+
+textarea:focus {
+  border-color: #2563eb;
+}
+
+.scan-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.loading {
+  display: none;
+  margin-top: 15px;
+  color: #93c5fd;
+}
+
+.stats {
+  padding: 40px 8%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.stat-card {
+  background: rgba(15,23,42,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.stat-card h2 {
+  font-size: 38px;
+  margin-bottom: 10px;
+  color: #60a5fa;
+}
+
+.stat-card p {
+  color: #94a3b8;
+}
+
+.results-section {
+  padding: 20px 8% 60px;
+}
+
+.result-card {
+  background: rgba(15,23,42,0.88);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 5px solid #334155;
+}
+
+.high {
+  border-left-color: #ef4444;
+}
+
+.med {
+  border-left-color: #f59e0b;
+}
+
+.low {
+  border-left-color: #22c55e;
+}
+
+.score-row {
+  margin-top: 12px;
+  color: #93c5fd;
+}
+
+.contact-section {
+  padding: 60px 8%;
+}
+
+.contact-card {
+  background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(14,165,233,0.08));
+  border-radius: 24px;
+  padding: 40px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.contact-card h2 {
+  font-size: 38px;
+  margin-bottom: 15px;
+}
+
+.contact-card p {
+  color: #cbd5e1;
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+
+.footer {
+  padding: 30px 8%;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 980px) {
+  .hero {
+    grid-template-columns: 1fr;
   }
 
-  .container {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 20px;
+  .hero-text h1 {
+    font-size: 48px;
   }
 
-  .header {
-    text-align: center;
-    margin-bottom: 30px;
+  .stats {
+    grid-template-columns: 1fr;
   }
-
-  .header h1 {
-    font-size: 36px;
-    margin: 0;
-    color: #60a5fa;
-  }
-
-  .header p {
-    color: #94a3b8;
-  }
-
-  .card {
-    background: #111827;
-    padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    margin-bottom: 20px;
-  }
-
-  textarea {
-    width: 100%;
-    height: 160px;
-    border-radius: 10px;
-    border: 1px solid #334155;
-    padding: 12px;
-    font-size: 15px;
-    background: #0b1220;
-    color: #e2e8f0;
-    outline: none;
-  }
-
-  button {
-    margin-top: 12px;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 10px;
-    background: #2563eb;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-
-  button:hover {
-    background: #1d4ed8;
-  }
-
-  .result-card {
-    background: #0b1220;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 10px;
-    border-left: 4px solid #334155;
-  }
-
-  .high { border-left: 4px solid #ef4444; }
-  .med { border-left: 4px solid #f59e0b; }
-  .low { border-left: 4px solid #22c55e; }
-
-  .score {
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-  }
-
-  .tag {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    margin-left: 6px;
-  }
-
-  .loading {
-    display: none;
-    color: #93c5fd;
-    margin-top: 10px;
-  }
-
-  @media (max-width: 768px) {
-    .grid {
-      grid-template-columns: 1fr;
-    }
-  }
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="hero-bg"></div>
 
-  <div class="header">
-    <h1>Authentiscan</h1>
-    <p>AI-powered plagiarism & web similarity detection system</p>
+<nav class="navbar">
+  <div class="logo">Authentiscan</div>
+
+  <div class="nav-links">
+    <a href="#scanner">Scanner</a>
+    <a href="#results">Results</a>
+    <a href="#contact">Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+
+  <div class="hero-text">
+    <div class="badge">AI-Powered Academic Integrity Platform</div>
+
+    <h1>
+      Detect plagiarism
+      beyond copy & paste.
+    </h1>
+
+    <p>
+      Authentiscan combines semantic AI analysis and web-based signals
+      to detect copied and paraphrased academic content in seconds.
+    </p>
+
+    <div class="hero-buttons">
+      <button class="primary-btn" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})">
+        Try Live Demo
+      </button>
+
+      <button class="secondary-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">
+        Request Institutional Demo
+      </button>
+    </div>
   </div>
 
-  <div class="card">
-    <textarea id="text" placeholder="Paste your academic content here..."></textarea>
-    <button id="scan-button" onclick="scan()">Scan Document</button>
-    <div class="loading" id="loading">Analyzing content...</div>
+  <div class="hero-card" id="scanner">
+    <textarea id="text" placeholder="Paste academic content here..."></textarea>
+
+    <button id="scan-button" class="scan-btn" onclick="scan()">
+      Scan Document
+    </button>
+
+    <div id="loading" class="loading">
+      Analyzing semantic similarity...
+    </div>
   </div>
 
+</section>
+
+<section class="stats">
+  <div class="stat-card">
+    <h2>AI</h2>
+    <p>Semantic plagiarism detection powered by transformer-based NLP.</p>
+  </div>
+
+  <div class="stat-card">
+    <h2>Web</h2>
+    <p>Hybrid similarity analysis using web-based signal enhancement.</p>
+  </div>
+
+  <div class="stat-card">
+    <h2>Fast</h2>
+    <p>Real-time similarity scanning and sentence-level analysis.</p>
+  </div>
+</section>
+
+<section class="results-section" id="results">
   <div id="result"></div>
+</section>
 
-</div>
+<section class="contact-section" id="contact">
+  <div class="contact-card">
+    <h2>Institutional Pilot Program</h2>
+
+    <p>
+      Authentiscan is currently available for pilot testing in universities,
+      colleges, and academic institutions interested in strengthening
+      academic integrity workflows.
+    </p>
+
+    <button class="primary-btn">
+      Request a Demo
+    </button>
+  </div>
+</section>
+
+<footer class="footer">
+  © 2026 Authentiscan — AI-Powered Academic Integrity System
+</footer>
 
 <script>
 async function scan() {
@@ -140,15 +364,20 @@ async function scan() {
   const text = textInput.value.trim();
   const loading = document.getElementById("loading");
   const button = document.getElementById("scan-button");
+  const resultDiv = document.getElementById("result");
 
   if (!text) {
-    document.getElementById("result").innerHTML = `<div class="card"><p>Please enter text to scan.</p></div>`;
+    resultDiv.innerHTML = `
+      <div class="result-card low">
+        <p>Please enter text to scan.</p>
+      </div>
+    `;
     return;
   }
 
   button.disabled = true;
   loading.style.display = "block";
-  document.getElementById("result").innerHTML = "";
+  resultDiv.innerHTML = "";
 
   try {
     const res = await fetch("/scan", {
@@ -160,53 +389,47 @@ async function scan() {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.detail || "Scan failed. Please try again.");
+      throw new Error(data.detail || "Scan failed.");
     }
 
     let html = `
-      <div class="card">
-        <div class="score">
-          Overall Similarity: <strong>${data.overall_similarity}%</strong>
-        </div>
+      <div class="result-card low">
+        <h2>Overall Similarity: ${data.overall_similarity}%</h2>
+        <p>${data.sentence_count} sentence(s) analyzed.</p>
       </div>
     `;
 
-  html += `<div class="grid">`;
+    data.details.forEach(d => {
+      let cls = d.final_score >= 75 ? "high" : d.final_score >= 40 ? "med" : "low";
 
-  data.details.forEach(d => {
-    let cls = d.final_score >= 75 ? "high" : d.final_score >= 40 ? "med" : "low";
+      html += `
+        <div class="result-card ${cls}">
+          <p>${d.sentence}</p>
 
-    let label =
-      d.final_score >= 75 ? "HIGH SIMILARITY" :
-      d.final_score >= 40 ? "MEDIUM SIMILARITY" : "LOW SIMILARITY";
+          <div class="score-row">
+            AI: ${d.ai_score}% |
+            Web: ${d.web_score}% |
+            Final: ${d.final_score}%
+          </div>
+        </div>
+      `;
+    });
 
     html += `
-      <div class="result-card ${cls}">
-        <p>${d.sentence}</p>
-        <p>
-          AI: ${d.ai_score}% |
-          Web: ${d.web_score}% |
-          Final: <strong>${d.final_score}%</strong>
-          <span class="tag">${label}</span>
-        </p>
+      <div class="result-card low">
+        <h3>Detected Web Sources</h3>
+        ${data.web_sources.length
+          ? data.web_sources.map(w => `<p>🔗 ${w}</p>`).join("")
+          : `<p>No web sources detected.</p>`}
       </div>
     `;
-  });
 
-  html += `</div>`;
+    resultDiv.innerHTML = html;
 
-  html += `
-    <div class="card">
-      <h3>Web Sources Detected</h3>
-      ${data.web_sources.length ? data.web_sources.map(w => `<p>🔗 ${w}</p>`).join("") : `<p>No web sources detected.</p>`}
-    </div>
-  `;
-
-  document.getElementById("result").innerHTML = html;
-  } catch (error) {
-    document.getElementById("result").innerHTML = `
-      <div class="card">
-        <p style="color:#fecaca">Error: ${error.message}</p>
+  } catch(error) {
+    resultDiv.innerHTML = `
+      <div class="result-card high">
+        <p>Error: ${error.message}</p>
       </div>
     `;
   } finally {
