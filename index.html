@@ -126,7 +126,7 @@
 
   <div class="card">
     <textarea id="text" placeholder="Paste your academic content here..."></textarea>
-    <button onclick="scan()">Scan Document</button>
+    <button id="scan-button" onclick="scan()">Scan Document</button>
     <div class="loading" id="loading">Analyzing content...</div>
   </div>
 
@@ -136,37 +136,49 @@
 
 <script>
 async function scan() {
-  const text = document.getElementById("text").value;
+  const textInput = document.getElementById("text");
+  const text = textInput.value.trim();
   const loading = document.getElementById("loading");
+  const button = document.getElementById("scan-button");
 
+  if (!text) {
+    document.getElementById("result").innerHTML = `<div class="card"><p>Please enter text to scan.</p></div>`;
+    return;
+  }
+
+  button.disabled = true;
   loading.style.display = "block";
+  document.getElementById("result").innerHTML = "";
 
-  const res = await fetch("/scan", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({text})
-  });
+  try {
+    const res = await fetch("/scan", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text})
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  loading.style.display = "none";
+    if (!res.ok) {
+      throw new Error(data.detail || "Scan failed. Please try again.");
+    }
 
-  let html = `
-    <div class="card">
-      <div class="score">
-        Overall Similarity: <strong>${data.overall_similarity}%</strong>
+    let html = `
+      <div class="card">
+        <div class="score">
+          Overall Similarity: <strong>${data.overall_similarity}%</strong>
+        </div>
       </div>
-    </div>
-  `;
+    `;
 
   html += `<div class="grid">`;
 
   data.details.forEach(d => {
-    let cls = d.final_score > 75 ? "high" : d.final_score > 40 ? "med" : "low";
+    let cls = d.final_score >= 75 ? "high" : d.final_score >= 40 ? "med" : "low";
 
     let label =
-      d.final_score > 75 ? "HIGH RISK" :
-      d.final_score > 40 ? "MEDIUM RISK" : "LOW RISK";
+      d.final_score >= 75 ? "HIGH SIMILARITY" :
+      d.final_score >= 40 ? "MEDIUM SIMILARITY" : "LOW SIMILARITY";
 
     html += `
       <div class="result-card ${cls}">
@@ -186,11 +198,21 @@ async function scan() {
   html += `
     <div class="card">
       <h3>Web Sources Detected</h3>
-      ${data.web_sources.map(w => `<p>🔗 ${w}</p>`).join("")}
+      ${data.web_sources.length ? data.web_sources.map(w => `<p>🔗 ${w}</p>`).join("") : `<p>No web sources detected.</p>`}
     </div>
   `;
 
   document.getElementById("result").innerHTML = html;
+  } catch (error) {
+    document.getElementById("result").innerHTML = `
+      <div class="card">
+        <p style="color:#fecaca">Error: ${error.message}</p>
+      </div>
+    `;
+  } finally {
+    loading.style.display = "none";
+    button.disabled = false;
+  }
 }
 </script>
 

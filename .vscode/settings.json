@@ -24,6 +24,7 @@
         "numpy",
         "pydantic",
         "Pygments",
+        "REUSEADDR",
         "safetensors",
         "scikit",
         "scipy",
@@ -39,5 +40,6 @@
         "uvicorn",
         "venv",
         "watchfiles"
-    ]
+    ],
+    "svn.ignoreMissingSvnWarning": true
 }

@@ -88,7 +88,13 @@ pip install -r requirements.txt
 ### 4. Run the backend server
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 10000
+```
+
+If you are using the provided virtual environment, activate it first:
+
+```bash
+.\.venv\Scripts\Activate.ps1
 ```
 
 ## 🚀 Usage
