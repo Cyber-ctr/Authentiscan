@@ -16,6 +16,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background: #020617;
@@ -39,6 +43,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
 .logo {
@@ -50,6 +55,7 @@ body {
 .nav-links {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .nav-links a {
@@ -147,6 +153,27 @@ textarea:focus {
   border-color: #2563eb;
 }
 
+.file-wrap {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px dashed #334155;
+  background: rgba(2, 6, 23, 0.7);
+}
+
+.file-wrap label {
+  display: block;
+  font-size: 14px;
+  color: #cbd5e1;
+  margin-bottom: 10px;
+}
+
+.file-input {
+  width: 100%;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
 .scan-btn {
   width: 100%;
   margin-top: 18px;
@@ -158,6 +185,11 @@ textarea:focus {
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
+}
+
+.scan-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .loading {
@@ -306,6 +338,16 @@ textarea:focus {
   <div class="hero-card" id="scanner">
     <textarea id="text" placeholder="Paste academic content here..."></textarea>
 
+    <div class="file-wrap">
+      <label for="fileInput">Or upload a document (.pdf, .docx, .txt)</label>
+      <input
+        type="file"
+        id="fileInput"
+        class="file-input"
+        accept=".pdf,.docx,.txt"
+      />
+    </div>
+
     <button id="scan-button" class="scan-btn" onclick="scan()">
       Scan Document
     </button>
@@ -348,7 +390,7 @@ textarea:focus {
       academic integrity workflows.
     </p>
 
-    <button class="primary-btn">
+    <button class="primary-btn" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})">
       Request a Demo
     </button>
   </div>
@@ -361,34 +403,43 @@ textarea:focus {
 <script>
 async function scan() {
   const textInput = document.getElementById("text");
-  const text = textInput.value.trim();
+  const fileInput = document.getElementById("fileInput");
   const loading = document.getElementById("loading");
   const button = document.getElementById("scan-button");
   const resultDiv = document.getElementById("result");
 
-  if (!text) {
-    resultDiv.innerHTML = `
-      <div class="result-card low">
-        <p>Please enter text to scan.</p>
-      </div>
-    `;
-    return;
-  }
-
-  button.disabled = true;
   loading.style.display = "block";
+  button.disabled = true;
   resultDiv.innerHTML = "";
 
   try {
-    const res = await fetch("/scan", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({text})
-    });
+    let response;
 
-    const data = await res.json();
+    if (fileInput.files.length > 0) {
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
 
-    if (!res.ok) {
+      response = await fetch("/upload", {
+        method: "POST",
+        body: formData
+      });
+    } else {
+      const text = textInput.value.trim();
+
+      if (!text) {
+        throw new Error("Please provide text or upload a document.");
+      }
+
+      response = await fetch("/scan", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ text })
+      });
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
       throw new Error(data.detail || "Scan failed.");
     }
 
@@ -400,12 +451,11 @@ async function scan() {
     `;
 
     data.details.forEach(d => {
-      let cls = d.final_score >= 75 ? "high" : d.final_score >= 40 ? "med" : "low";
+      const cls = d.final_score >= 75 ? "high" : d.final_score >= 40 ? "med" : "low";
 
       html += `
         <div class="result-card ${cls}">
           <p>${d.sentence}</p>
-
           <div class="score-row">
             AI: ${d.ai_score}% |
             Web: ${d.web_score}% |
@@ -425,8 +475,7 @@ async function scan() {
     `;
 
     resultDiv.innerHTML = html;
-
-  } catch(error) {
+  } catch (error) {
     resultDiv.innerHTML = `
       <div class="result-card high">
         <p>Error: ${error.message}</p>
