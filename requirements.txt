@@ -57,3 +57,4 @@ websockets==16.0
 python-multipart
 PyPDF2
 python-docx
+reportlab

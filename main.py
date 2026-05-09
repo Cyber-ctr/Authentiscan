@@ -15,6 +15,15 @@ from io import BytesIO
 import PyPDF2
 from docx import Document
 
+# PDF REPORTS
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer
+)
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
+
 # ---------------------------
 # CONFIG
 # ---------------------------
@@ -54,19 +63,25 @@ documents_db = [
 
 def get_model():
     global model
+
     if model is None:
         logger.info("Loading AI model...")
         model = SentenceTransformer(MODEL_NAME)
+
     return model
 
 def get_db_embeddings():
     global db_embeddings
+
     if db_embeddings is None:
+
         model_instance = get_model()
+
         db_embeddings = model_instance.encode(
             documents_db,
             convert_to_tensor=True
         )
+
     return db_embeddings
 
 # ---------------------------
@@ -74,7 +89,12 @@ def get_db_embeddings():
 # ---------------------------
 
 def split_sentences(text: str) -> List[str]:
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+
+    sentences = re.split(
+        r'(?<=[.!?])\s+',
+        text
+    )
+
     return [
         s.strip()
         for s in sentences
@@ -82,7 +102,9 @@ def split_sentences(text: str) -> List[str]:
     ]
 
 def web_search(query: str):
+
     try:
+
         encoded_query = quote(query)
 
         url = f"https://duckduckgo.com/html/?q={encoded_query}"
@@ -99,9 +121,15 @@ def web_search(query: str):
 
         from bs4 import BeautifulSoup
 
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser"
+        )
 
-        results = soup.find_all("a", class_="result__a")
+        results = soup.find_all(
+            "a",
+            class_="result__a"
+        )
 
         return [
             r.get_text()
@@ -109,7 +137,11 @@ def web_search(query: str):
         ]
 
     except Exception as e:
-        logger.warning(f"Web search failed: {e}")
+
+        logger.warning(
+            f"Web search failed: {e}"
+        )
+
         return []
 
 # ---------------------------
@@ -117,11 +149,15 @@ def web_search(query: str):
 # ---------------------------
 
 def extract_pdf_text(file_bytes):
+
     text = ""
 
-    reader = PyPDF2.PdfReader(BytesIO(file_bytes))
+    reader = PyPDF2.PdfReader(
+        BytesIO(file_bytes)
+    )
 
     for page in reader.pages:
+
         extracted = page.extract_text()
 
         if extracted:
@@ -130,9 +166,12 @@ def extract_pdf_text(file_bytes):
     return text
 
 def extract_docx_text(file_bytes):
+
     text = ""
 
-    doc = Document(BytesIO(file_bytes))
+    doc = Document(
+        BytesIO(file_bytes)
+    )
 
     for para in doc.paragraphs:
         text += para.text + "\n"
@@ -144,6 +183,7 @@ def extract_docx_text(file_bytes):
 # ---------------------------
 
 class TextRequest(BaseModel):
+
     text: str
 
     @field_validator("text")
@@ -151,15 +191,21 @@ class TextRequest(BaseModel):
     def validate_text(cls, v):
 
         if not v or not v.strip():
-            raise ValueError("Text cannot be empty")
+            raise ValueError(
+                "Text cannot be empty"
+            )
 
         v = v.strip()
 
         if len(v) < MIN_TEXT_LENGTH:
-            raise ValueError("Text too short")
+            raise ValueError(
+                "Text too short"
+            )
 
         if len(v) > MAX_TEXT_LENGTH:
-            raise ValueError("Text too long")
+            raise ValueError(
+                "Text too long"
+            )
 
         return v
 
@@ -209,11 +255,17 @@ def analyze_text(text: str):
             convert_to_tensor=True
         )
 
-        scores = util.cos_sim(emb, db_embeds)
+        scores = util.cos_sim(
+            emb,
+            db_embeds
+        )
 
         max_score = float(scores.max())
 
-        ai_score = max(0, min(100, max_score * 100))
+        ai_score = max(
+            0,
+            min(100, max_score * 100)
+        )
 
         web_results = web_search(sentence)
 
@@ -223,14 +275,17 @@ def analyze_text(text: str):
         web_score = 20 if web_results else 0
 
         final_score = round(
-            (ai_score * 0.7) + (web_score * 0.3),
+            (ai_score * 0.7) +
+            (web_score * 0.3),
             2
         )
 
         if final_score >= 75:
             status = "High similarity"
+
         elif final_score >= 40:
             status = "Moderate similarity"
+
         else:
             status = "Low similarity"
 
@@ -243,7 +298,10 @@ def analyze_text(text: str):
         })
 
     overall = round(
-        sum(r["final_score"] for r in results) / len(results),
+        sum(
+            r["final_score"]
+            for r in results
+        ) / len(results),
         2
     ) if results else 0
 
@@ -255,20 +313,112 @@ def analyze_text(text: str):
     }
 
 # ---------------------------
+# PDF REPORT GENERATOR
+# ---------------------------
+
+def generate_pdf_report(scan_result):
+
+    report_path = "authentiscan_report.pdf"
+
+    doc = SimpleDocTemplate(
+        report_path,
+        pagesize=letter
+    )
+
+    styles = getSampleStyleSheet()
+
+    elements = []
+
+    title = Paragraph(
+        "<b>Authentiscan Plagiarism Report</b>",
+        styles['Title']
+    )
+
+    elements.append(title)
+
+    elements.append(
+        Spacer(1, 20)
+    )
+
+    overall = Paragraph(
+        f"""
+        <b>Overall Similarity:</b>
+        {scan_result['overall_similarity']}%
+        """,
+        styles['BodyText']
+    )
+
+    elements.append(overall)
+
+    elements.append(
+        Spacer(1, 15)
+    )
+
+    sentence_count = Paragraph(
+        f"""
+        <b>Sentences Analyzed:</b>
+        {scan_result['sentence_count']}
+        """,
+        styles['BodyText']
+    )
+
+    elements.append(sentence_count)
+
+    elements.append(
+        Spacer(1, 20)
+    )
+
+    for item in scan_result["details"]:
+
+        paragraph = Paragraph(
+            f"""
+            <b>Sentence:</b>
+            {item['sentence']}<br/>
+
+            <b>AI Score:</b>
+            {item['ai_score']}%<br/>
+
+            <b>Web Score:</b>
+            {item['web_score']}%<br/>
+
+            <b>Final Score:</b>
+            {item['final_score']}%<br/>
+
+            <b>Status:</b>
+            {item['status']}
+            """,
+            styles['BodyText']
+        )
+
+        elements.append(paragraph)
+
+        elements.append(
+            Spacer(1, 15)
+        )
+
+    doc.build(elements)
+
+    return report_path
+
+# ---------------------------
 # TEXT SCAN
 # ---------------------------
 
 @app.post("/scan")
 def scan_text(request: TextRequest):
 
-    return analyze_text(request.text)
+    return analyze_text(
+        request.text
+    )
 
 # ---------------------------
 # FILE SCAN
 # ---------------------------
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...)
+):
 
     filename = file.filename.lower()
 
@@ -278,29 +428,60 @@ async def upload_file(file: UploadFile = File(...)):
 
     if filename.endswith(".pdf"):
 
-        text = extract_pdf_text(file_bytes)
+        text = extract_pdf_text(
+            file_bytes
+        )
 
     elif filename.endswith(".docx"):
 
-        text = extract_docx_text(file_bytes)
+        text = extract_docx_text(
+            file_bytes
+        )
 
     elif filename.endswith(".txt"):
 
-        text = file_bytes.decode("utf-8")
+        text = file_bytes.decode(
+            "utf-8"
+        )
 
     else:
+
         raise HTTPException(
             status_code=400,
             detail="Unsupported file type"
         )
 
     if not text.strip():
+
         raise HTTPException(
             status_code=400,
             detail="No readable text found"
         )
 
     return analyze_text(text)
+
+# ---------------------------
+# PDF REPORT
+# ---------------------------
+
+@app.post("/generate-report")
+def generate_report(
+    request: TextRequest
+):
+
+    result = analyze_text(
+        request.text
+    )
+
+    pdf_path = generate_pdf_report(
+        result
+    )
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename="Authentiscan_Report.pdf"
+    )
 
 # ---------------------------
 # START SERVER
@@ -310,7 +491,12 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    port = int(os.environ.get("PORT", 10000))
+    port = int(
+        os.environ.get(
+            "PORT",
+            10000
+        )
+    )
 
     uvicorn.run(
         app,
