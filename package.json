@@ -1,0 +1,28 @@
+{
+  "name": "authentiscan",
+  "version": "1.0.0",
+  "description": "AI-Powered Plagiarism Detection for Academic & Professional Integrity",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cyber-ctr/Authentiscan.git"
+  },
+  "keywords": [
+    "plagiarism",
+    "detection",
+    "ai",
+    "analytics"
+  ],
+  "author": "EKENU STEVE MBAH",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Cyber-ctr/Authentiscan/issues"
+  },
+  "homepage": "https://github.com/Cyber-ctr/Authentiscan#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
