@@ -29,6 +29,9 @@ This project represents the **MVP (Minimum Viable Product)** of a scalable SaaS 
 * 🎨 **Simple Web Interface**
   Clean UI with color-coded similarity indicators (High, Medium, Low).
 
+* 📎 **File Upload Support**
+  Upload PDF, DOCX, or TXT documents for analysis.
+
 * 🔐 **Privacy-Friendly (MVP Level)**
   Processes text without permanent storage (no database yet).
 
@@ -65,18 +68,21 @@ Authentiscan follows a simple client-server architecture:
 
 ## ⚙️ Installation & Setup
 
-### 1. Clone the repository
+### 1. Open the local workspace
+
+This project is available locally at:
 
 ```bash
-git clone https://github.com/Cyber-ctr/authentiscan.git
-cd authentiscan
+cd "c:\Users\PRINCE_E.K.E.N.U\Desktop\Authentiscan"
 ```
+
+If you are working from a cloned repo, use the repo root instead.
 
 ### 2. Create a virtual environment (optional but recommended)
 
 ```bash
-python -m venv venv
-venv\Scripts\activate
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 ```
 
 ### 3. Install dependencies
@@ -89,6 +95,12 @@ pip install -r requirements.txt
 
 ```bash
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 10000
+```
+
+Then open your browser at:
+
+```bash
+http://localhost:10000
 ```
 
 If you are using the provided virtual environment, activate it first:
@@ -124,7 +136,7 @@ If you are using the provided virtual environment, activate it first:
 
 * Uses a **small internal dataset**
 * Web search is **basic and not fully reliable**
-* No file upload support (PDF/DOCX yet)
+* File upload support is available for PDF, DOCX, and TXT
 * No user accounts or saved history
 * Not production-grade accuracy (yet)
 
@@ -132,7 +144,7 @@ If you are using the provided virtual environment, activate it first:
 
 ## 🔮 Future Improvements
 
-* 📂 File upload support (PDF, DOCX)
+* 📂 Expanded file upload support and document parsing improvements
 * 🧑‍💻 User authentication system
 * 🗄️ Database for storing scans
 * 🌍 Large-scale web & academic corpus integration
@@ -168,6 +180,7 @@ This project is currently unlicensed (for development and testing purposes). A p
 ## 👤 Author
 
 **EKENU STEVE MBAH**
+**B-Tech in Software Engineering**
 Founder, Authentiscan
 
 ---

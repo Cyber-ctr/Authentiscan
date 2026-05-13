@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Response, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 from sentence_transformers import SentenceTransformer, util
 from pathlib import Path
@@ -37,6 +38,9 @@ MIN_TEXT_LENGTH = 10
 app = FastAPI()
 
 BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,6 +65,7 @@ documents_db = [
 # MODEL LOADING
 # ---------------------------
 
+
 def get_model():
     global model
 
@@ -69,6 +74,7 @@ def get_model():
         model = SentenceTransformer(MODEL_NAME)
 
     return model
+
 
 def get_db_embeddings():
     global db_embeddings
@@ -88,6 +94,7 @@ def get_db_embeddings():
 # HELPERS
 # ---------------------------
 
+
 def split_sentences(text: str) -> List[str]:
 
     sentences = re.split(
@@ -100,6 +107,7 @@ def split_sentences(text: str) -> List[str]:
         for s in sentences
         if s.strip() and len(s.strip()) > 5
     ]
+
 
 def web_search(query: str):
 
@@ -148,6 +156,7 @@ def web_search(query: str):
 # FILE EXTRACTION
 # ---------------------------
 
+
 def extract_pdf_text(file_bytes):
 
     text = ""
@@ -165,6 +174,7 @@ def extract_pdf_text(file_bytes):
 
     return text
 
+
 def extract_docx_text(file_bytes):
 
     text = ""
@@ -181,6 +191,7 @@ def extract_docx_text(file_bytes):
 # ---------------------------
 # VALIDATION
 # ---------------------------
+
 
 class TextRequest(BaseModel):
 
@@ -213,6 +224,7 @@ class TextRequest(BaseModel):
 # ROUTES
 # ---------------------------
 
+
 @app.get("/")
 def serve_frontend():
 
@@ -220,12 +232,14 @@ def serve_frontend():
 
     return FileResponse(frontend_path)
 
+
 @app.get("/health")
 def health():
 
     return {
         "status": "healthy"
     }
+
 
 @app.get("/favicon.ico")
 def favicon():
@@ -235,6 +249,7 @@ def favicon():
 # ---------------------------
 # CORE SCANNER
 # ---------------------------
+
 
 def analyze_text(text: str):
 
@@ -316,12 +331,13 @@ def analyze_text(text: str):
 # PDF REPORT GENERATOR
 # ---------------------------
 
+
 def generate_pdf_report(scan_result):
 
-    report_path = "authentiscan_report.pdf"
+    buffer = BytesIO()
 
     doc = SimpleDocTemplate(
-        report_path,
+        buffer,
         pagesize=letter
     )
 
@@ -398,11 +414,13 @@ def generate_pdf_report(scan_result):
 
     doc.build(elements)
 
-    return report_path
+    buffer.seek(0)
+    return buffer.getvalue()
 
 # ---------------------------
 # TEXT SCAN
 # ---------------------------
+
 
 @app.post("/scan")
 def scan_text(request: TextRequest):
@@ -414,6 +432,7 @@ def scan_text(request: TextRequest):
 # ---------------------------
 # FILE SCAN
 # ---------------------------
+
 
 @app.post("/upload")
 async def upload_file(
@@ -464,6 +483,7 @@ async def upload_file(
 # PDF REPORT
 # ---------------------------
 
+
 @app.post("/generate-report")
 def generate_report(
     request: TextRequest
@@ -473,19 +493,23 @@ def generate_report(
         request.text
     )
 
-    pdf_path = generate_pdf_report(
+    pdf_bytes = generate_pdf_report(
         result
     )
 
-    return FileResponse(
-        pdf_path,
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
-        filename="Authentiscan_Report.pdf"
+        headers={
+            "Content-Disposition":
+            "attachment; filename=Authentiscan_Report.pdf"
+        }
     )
 
 # ---------------------------
 # START SERVER
 # ---------------------------
+
 
 if __name__ == "__main__":
 

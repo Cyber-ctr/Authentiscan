@@ -23,6 +23,7 @@
         "networkx",
         "numpy",
         "pagesizes",
+        "pycache",
         "pydantic",
         "Pygments",
         "reportlab",
