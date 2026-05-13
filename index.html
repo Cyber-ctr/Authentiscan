@@ -23,13 +23,9 @@ crossorigin>
 href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
 rel="stylesheet">
 
-<link rel="icon" 
-sizes="16x16" 
-href="/logo/logo.png" />
+<link rel="icon" sizes="16x16" href="logo/logo.png" />
 
-<link rel="icon"
- sizes="32x32" 
- href="/logo/logo.png" />
+<link rel="icon" sizes="32x32" href="logo/logo.png" />
 
 
 <style>
@@ -158,7 +154,8 @@ body{
 
   padding:28px;
 
-  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 
   box-shadow:
   0 20px 50px rgba(0,0,0,0.35);
@@ -197,6 +194,10 @@ textarea{
   padding:14px;
   border-radius:16px;
   border:1px dashed #334155;
+}
+
+.file-wrap p{
+  margin-bottom:10px;
 }
 
 .scan-btn{
@@ -350,10 +351,12 @@ Or upload a document
 (.pdf, .docx, .txt)
 </p>
 
+<label for="fileInput" class="sr-only">Upload document</label>
 <input
 type="file"
 id="fileInput"
 accept=".pdf,.docx,.txt"
+title="Upload document"
 />
 
 </div>
@@ -373,11 +376,7 @@ Analyzing document...
 <button
 id="report-button"
 class="secondary-btn"
-style="
-width:100%;
-margin-top:15px;
-display:none;
-"
+type="button"
 onclick="downloadReport()"
 >
 Download PDF Report
