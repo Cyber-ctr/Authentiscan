@@ -10,6 +10,7 @@
         "fastapi",
         "filelock",
         "fsspec",
+        "gunicorn",
         "httpcore",
         "httptools",
         "httpx",
@@ -22,6 +23,8 @@
         "mpmath",
         "networkx",
         "numpy",
+        "officedocument",
+        "openxmlformats",
         "pagesizes",
         "pycache",
         "pydantic",
@@ -33,6 +36,7 @@
         "scipy",
         "setuptools",
         "shellingham",
+        "slowapi",
         "soupsieve",
         "starlette",
         "sympy",
@@ -42,7 +46,8 @@
         "urllib",
         "uvicorn",
         "venv",
-        "watchfiles"
+        "watchfiles",
+        "wordprocessingml"
     ],
     "svn.ignoreMissingSvnWarning": true
 }

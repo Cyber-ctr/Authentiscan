@@ -1,46 +1,98 @@
-from fastapi import FastAPI, Response, HTTPException, UploadFile, File
+from fastapi import (
+    FastAPI,
+    Response,
+    HTTPException,
+    UploadFile,
+    File,
+    Request
+)
+
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse
+)
+
 from fastapi.staticfiles import StaticFiles
+
 from pydantic import BaseModel, field_validator
-from sentence_transformers import SentenceTransformer, util
+
+from sentence_transformers import (
+    SentenceTransformer,
+    util
+)
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from pathlib import Path
-import requests
-import os
-import logging
-import re
-import numpy as np
-from typing import List
 from urllib.parse import quote
 from io import BytesIO
-import PyPDF2
-from docx import Document
+from typing import List
 
-# PDF REPORTS
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer
 )
+
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
+
+from docx import Document
+
+import requests
+import logging
+'# import numpy as np'
+import PyPDF2
+import bleach
+import magic
+import uvicorn
+import os
+import re
 
 # ---------------------------
 # CONFIG
 # ---------------------------
 
 logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 MAX_TEXT_LENGTH = 50000
 MIN_TEXT_LENGTH = 10
+MAX_FILE_SIZE = 5 * 1024 * 1024
+
+MODEL_NAME = "paraphrase-MiniLM-L3-v2"
+
+BASE_DIR = Path(__file__).resolve().parent
+
+# ---------------------------
+# APP
+# ---------------------------
 
 app = FastAPI()
 
-BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static"
+)
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+# ---------------------------
+# RATE LIMITER
+# ---------------------------
+
+limiter = Limiter(
+    key_func=get_remote_address
+)
+
+app.state.limiter = limiter
+
+# ---------------------------
+# CORS
+# ---------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,7 +102,81 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_NAME = "paraphrase-MiniLM-L3-v2"
+# ---------------------------
+# SECURITY HEADERS
+# ---------------------------
+
+
+@app.middleware("http")
+async def add_security_headers(
+    request: Request,
+    call_next
+):
+
+    response = await call_next(request)
+
+    response.headers[
+        "X-Content-Type-Options"
+    ] = "nosniff"
+
+    response.headers[
+        "X-Frame-Options"
+    ] = "DENY"
+
+    response.headers[
+        "Referrer-Policy"
+    ] = "strict-origin-when-cross-origin"
+
+    response.headers[
+        "Content-Security-Policy"
+    ] = (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline' "
+        "https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com;"
+    )
+
+    return response
+
+# ---------------------------
+# EXCEPTION HANDLERS
+# ---------------------------
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(
+    request: Request,
+    exc: RateLimitExceeded
+):
+
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail":
+            "Too many requests. Please slow down."
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(
+    request: Request,
+    exc: Exception
+):
+
+    logger.error(f"Unhandled error: {exc}")
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail":
+            "Internal server error."
+        }
+    )
+
+# ---------------------------
+# AI MODEL
+# ---------------------------
 
 model = None
 db_embeddings = None
@@ -58,25 +184,27 @@ db_embeddings = None
 documents_db = [
     "Artificial intelligence is transforming education.",
     "Machine learning improves plagiarism detection systems.",
-    "Natural language processing helps detect paraphrased content.",
+    "Natural language processing helps detect paraphrased content."
 ]
-
-# ---------------------------
-# MODEL LOADING
-# ---------------------------
 
 
 def get_model():
+
     global model
 
     if model is None:
+
         logger.info("Loading AI model...")
-        model = SentenceTransformer(MODEL_NAME)
+
+        model = SentenceTransformer(
+            MODEL_NAME
+        )
 
     return model
 
 
 def get_db_embeddings():
+
     global db_embeddings
 
     if db_embeddings is None:
@@ -93,6 +221,15 @@ def get_db_embeddings():
 # ---------------------------
 # HELPERS
 # ---------------------------
+
+
+def sanitize_text(text):
+
+    return bleach.clean(
+        text,
+        tags=[],
+        strip=True
+    )
 
 
 def split_sentences(text: str) -> List[str]:
@@ -153,6 +290,58 @@ def web_search(query: str):
         return []
 
 # ---------------------------
+# FILE SECURITY
+# ---------------------------
+
+
+def validate_file(
+    filename,
+    file_bytes
+):
+
+    allowed_extensions = {
+        ".pdf",
+        ".docx",
+        ".txt"
+    }
+
+    extension = os.path.splitext(
+        filename
+    )[1].lower()
+
+    if extension not in allowed_extensions:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type."
+        )
+
+    if len(file_bytes) > MAX_FILE_SIZE:
+
+        raise HTTPException(
+            status_code=400,
+            detail="File too large."
+        )
+
+    mime = magic.from_buffer(
+        file_bytes,
+        mime=True
+    )
+
+    allowed_mimes = {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain"
+    }
+
+    if mime not in allowed_mimes:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Suspicious file detected."
+        )
+
+# ---------------------------
 # FILE EXTRACTION
 # ---------------------------
 
@@ -202,6 +391,7 @@ class TextRequest(BaseModel):
     def validate_text(cls, v):
 
         if not v or not v.strip():
+
             raise ValueError(
                 "Text cannot be empty"
             )
@@ -209,11 +399,13 @@ class TextRequest(BaseModel):
         v = v.strip()
 
         if len(v) < MIN_TEXT_LENGTH:
+
             raise ValueError(
                 "Text too short"
             )
 
         if len(v) > MAX_TEXT_LENGTH:
+
             raise ValueError(
                 "Text too long"
             )
@@ -221,37 +413,13 @@ class TextRequest(BaseModel):
         return v
 
 # ---------------------------
-# ROUTES
-# ---------------------------
-
-
-@app.get("/")
-def serve_frontend():
-
-    frontend_path = BASE_DIR / "index.html"
-
-    return FileResponse(frontend_path)
-
-
-@app.get("/health")
-def health():
-
-    return {
-        "status": "healthy"
-    }
-
-
-@app.get("/favicon.ico")
-def favicon():
-
-    return Response(status_code=204)
-
-# ---------------------------
-# CORE SCANNER
+# ANALYSIS ENGINE
 # ---------------------------
 
 
 def analyze_text(text: str):
+
+    text = sanitize_text(text)
 
     model_instance = get_model()
 
@@ -328,16 +496,16 @@ def analyze_text(text: str):
     }
 
 # ---------------------------
-# PDF REPORT GENERATOR
+# PDF REPORT
 # ---------------------------
 
 
 def generate_pdf_report(scan_result):
 
-    buffer = BytesIO()
+    report_path = "authentiscan_report.pdf"
 
     doc = SimpleDocTemplate(
-        buffer,
+        report_path,
         pagesize=letter
     )
 
@@ -370,20 +538,6 @@ def generate_pdf_report(scan_result):
         Spacer(1, 15)
     )
 
-    sentence_count = Paragraph(
-        f"""
-        <b>Sentences Analyzed:</b>
-        {scan_result['sentence_count']}
-        """,
-        styles['BodyText']
-    )
-
-    elements.append(sentence_count)
-
-    elements.append(
-        Spacer(1, 20)
-    )
-
     for item in scan_result["details"]:
 
         paragraph = Paragraph(
@@ -414,8 +568,33 @@ def generate_pdf_report(scan_result):
 
     doc.build(elements)
 
-    buffer.seek(0)
-    return buffer.getvalue()
+    return report_path
+
+# ---------------------------
+# ROUTES
+# ---------------------------
+
+
+@app.get("/")
+def serve_frontend():
+
+    frontend_path = BASE_DIR / "index.html"
+
+    return FileResponse(frontend_path)
+
+
+@app.get("/health")
+def health():
+
+    return {
+        "status": "healthy"
+    }
+
+
+@app.get("/favicon.ico")
+def favicon():
+
+    return Response(status_code=204)
 
 # ---------------------------
 # TEXT SCAN
@@ -423,10 +602,14 @@ def generate_pdf_report(scan_result):
 
 
 @app.post("/scan")
-def scan_text(request: TextRequest):
+@limiter.limit("10/minute")
+def scan_text(
+    request: Request,
+    body: TextRequest
+):
 
     return analyze_text(
-        request.text
+        body.text
     )
 
 # ---------------------------
@@ -435,13 +618,20 @@ def scan_text(request: TextRequest):
 
 
 @app.post("/upload")
+@limiter.limit("10/minute")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...)
 ):
 
     filename = file.filename.lower()
 
     file_bytes = await file.read()
+
+    validate_file(
+        filename,
+        file_bytes
+    )
 
     text = ""
 
@@ -480,30 +670,29 @@ async def upload_file(
     return analyze_text(text)
 
 # ---------------------------
-# PDF REPORT
+# REPORT ROUTE
 # ---------------------------
 
 
 @app.post("/generate-report")
+@limiter.limit("10/minute")
 def generate_report(
-    request: TextRequest
+    request: Request,
+    body: TextRequest
 ):
 
     result = analyze_text(
-        request.text
+        body.text
     )
 
-    pdf_bytes = generate_pdf_report(
+    pdf_path = generate_pdf_report(
         result
     )
 
-    return Response(
-        content=pdf_bytes,
+    return FileResponse(
+        pdf_path,
         media_type="application/pdf",
-        headers={
-            "Content-Disposition":
-            "attachment; filename=Authentiscan_Report.pdf"
-        }
+        filename="Authentiscan_Report.pdf"
     )
 
 # ---------------------------
@@ -512,8 +701,6 @@ def generate_report(
 
 
 if __name__ == "__main__":
-
-    import uvicorn
 
     port = int(
         os.environ.get(

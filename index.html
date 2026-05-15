@@ -6,28 +6,66 @@
 <meta charset="UTF-8" />
 
 <meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
+name="viewport"
+content="width=device-width, initial-scale=1.0"
 />
 
-<title>Authentiscan</title>
+<meta
+name="description"
+content="Authentiscan AI-powered plagiarism detection platform for academic integrity."
+/>
 
-<link rel="preconnect"
-href="https://fonts.googleapis.com">
+<meta
+name="keywords"
+content="plagiarism detection, AI plagiarism checker, academic integrity, Authentiscan"
+/>
 
-<link rel="preconnect"
+<meta
+name="author"
+content="Authentiscan"
+/>
+
+<title>Authentiscan | AI Plagiarism Detection Platform</title>
+
+<link
+rel="preconnect"
+href="https://fonts.googleapis.com"
+/>
+
+<link
+rel="preconnect"
 href="https://fonts.gstatic.com"
-crossorigin>
+crossorigin
+/>
 
 <link
 href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-rel="stylesheet">
+rel="stylesheet"
+/>
 
-<link rel="icon" sizes="16x16" href="/static/logo/logo.png" />
+<link
+rel="icon"
+type="image/png"
+sizes="16x16"
+href="/static/logo/logo.png"
+/>
 
-<link rel="icon" sizes="32x32" href="/static/logo/logo.png" />
+<link
+rel="icon"
+type="image/png"
+sizes="32x32"
+href="/static/logo/logo.png"
+/>
 
-<link rel="stylesheet" href="/static/styles.css">
+<link
+rel="apple-touch-icon"
+href="/static/logo/logo.png"
+/>
+
+<link
+rel="stylesheet"
+href="/static/styles.css"
+/>
 
 </head>
 
@@ -35,22 +73,40 @@ rel="stylesheet">
 
 <div class="hero-bg"></div>
 
+<!-- NAVIGATION -->
+
 <nav class="navbar">
 
 <div class="logo">
+
 <img
 src="/static/logo/logo.png"
 alt="Authentiscan Logo"
-width="200"
-height="200" />
+width="120"
+height="120"
+/>
+
 </div>
 
 <div class="nav-links">
-<a href="#scanner">Scanner</a>
-<a href="#results">Results</a>
+
+<a href="#scanner">
+Scanner
+</a>
+
+<a href="#results">
+Results
+</a>
+
+<a href="#about">
+About
+</a>
+
 </div>
 
 </nav>
+
+<!-- HERO SECTION -->
 
 <section class="hero">
 
@@ -66,14 +122,18 @@ beyond copy & paste.
 </h1>
 
 <p>
-Authentiscan combines semantic AI analysis
-and web-based signals to detect copied
-and paraphrased academic content.
+Authentiscan combines semantic AI analysis,
+machine learning, and web-assisted similarity
+detection to identify copied and paraphrased
+academic content in real time.
 </p>
 
 <div class="hero-buttons">
 
-<button class="primary-btn">
+<button
+class="primary-btn"
+onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})"
+>
 Try Live Demo
 </button>
 
@@ -81,11 +141,17 @@ Try Live Demo
 
 </div>
 
-<div class="hero-card" id="scanner">
+<!-- SCANNER -->
+
+<div
+class="hero-card"
+id="scanner"
+>
 
 <textarea
 id="text"
 placeholder="Paste academic content here..."
+aria-label="Text input for plagiarism scan"
 ></textarea>
 
 <div class="file-wrap">
@@ -95,7 +161,13 @@ Or upload a document
 (.pdf, .docx, .txt)
 </p>
 
-<label for="fileInput" class="sr-only">Upload document</label>
+<label
+for="fileInput"
+class="sr-only"
+>
+Upload document
+</label>
+
 <input
 type="file"
 id="fileInput"
@@ -105,21 +177,38 @@ title="Upload document"
 
 </div>
 
-<button id="scan-button" class="scan-btn">
+<button
+id="scan-button"
+class="scan-btn"
+type="button"
+onclick="scan()"
+>
 Scan Document
 </button>
 
-<div id="loading" class="loading">
+<div
+id="loading"
+class="loading"
+style="display:none;"
+>
 Analyzing document...
 </div>
 
-<button id="report-button" class="secondary-btn" type="button">
+<button
+id="report-button"
+class="secondary-btn"
+type="button"
+style="display:none;"
+onclick="downloadReport()"
+>
 Download PDF Report
 </button>
 
 </div>
 
 </section>
+
+<!-- RESULTS -->
 
 <section
 class="results-section"
@@ -130,12 +219,42 @@ id="results"
 
 </section>
 
+<!-- ABOUT -->
+
+<section
+class="about-section"
+id="about"
+>
+
+<div class="about-card">
+
+<h2>
+Why Authentiscan?
+</h2>
+
+<p>
+Authentiscan is designed to help educational
+institutions, researchers, and professionals
+uphold academic integrity through intelligent,
+AI-powered plagiarism analysis.
+</p>
+
+</div>
+
+</section>
+
+<!-- FOOTER -->
+
 <footer class="footer">
 
+<p>
 © 2026 Authentiscan —
 AI-Powered Academic Integrity System
+</p>
 
 </footer>
+
+<!-- JAVASCRIPT -->
 
 <script src="/static/script.js"></script>
 
