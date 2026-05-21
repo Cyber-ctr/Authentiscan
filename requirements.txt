@@ -34,3 +34,7 @@ Jinja2
 
 watchfiles
 websockets
+
+sqlalchemy
+psycopg2-binary
+asyncpg
